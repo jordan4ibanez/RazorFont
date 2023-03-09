@@ -1,11 +1,11 @@
-//  ____________________________
-// |         RAZOR FONT         |
-// |____________________________|
-//  \            /\            /
-//  /            \/            \
-// | The Sharpest Font Library  |
-// |   For D Game Development   |
-// |____________________________|
+///  ____________________________
+/// |         RAZOR FONT         |
+/// |____________________________|
+///  \            /\            /
+///  /            \/            \
+/// | The Sharpest Font Library  |
+/// |   For D Game Development   |
+/// |____________________________|
 module razor_font;
 
 import std.conv;
