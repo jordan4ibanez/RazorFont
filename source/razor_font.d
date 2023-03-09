@@ -19,14 +19,6 @@ import std.math;
 
 
 /**
-Spec:
-
-File format:
-1. PNG with accompanying JSON in same directory. If these requirements are not met, it will throw an exception.
-2. Files must 
-*/
-
-/**
 Stores IMPORTANT font data to be reused by Razor Font - These are stored in static memory in the program
 Counts are so we can grab a slice of this information because anything after it WILL be garbage data
 */
@@ -245,9 +237,6 @@ void createFont(string fileLocation, string name = "", bool trimming = false, do
 
     // Now encode the linear string as a keymap of raw graphics positions
     encodeGraphics(fontObject, kerning, trimming, spacing, spaceCharacterSize);
-
-    //!Debug
-    // writeln(fontObject.map);
 
     // Finally add it into the library
     razorFonts[key] = fontObject;
@@ -469,14 +458,11 @@ void renderToCanvas(double posX, double posY, const double fontSize, string text
 
         typeWriterArmX += (characterWidth * fontSize) + spacing;
 
-
         // vertexData ~= rawVertex;
         // Now dispatch into the cache
         for (int i = 0; i < 8; i++) {
             vertexCache[i + vertexCount] = rawVertex[i];
         }
-        
-
 
         // Keep this on the stack
         int[6] rawIndices = RAW_INDICES;
@@ -546,8 +532,6 @@ void encodeGraphics(ref RazorFont fontObject, bool kerning, bool trimming, doubl
         const int currentRow = index % rows;
         const int currentColum = index / rows;
 
-        // writeln(value, " is at X: ", currentRow, " | Y: ", currentColum);
-
         // Now get literal pixel position (top left)
         int intPosX = (characterWidth + border) * currentRow;
         int intPosY = (characterHeight + border) * currentColum;
@@ -574,12 +558,10 @@ void encodeGraphics(ref RazorFont fontObject, bool kerning, bool trimming, doubl
 
             // Trim left side
             outer1: foreach(x; minX..maxX) {
-                // writeln(x);
                 newMinX = x;
                 foreach (y; minY..maxY) {
                     // This is ubyte (0-255)
                     if (tempImageObject.getPixel(x,y).a > 0) {
-                        // writeln("found it!");
                         break outer1;
                     }
                 }
@@ -587,20 +569,15 @@ void encodeGraphics(ref RazorFont fontObject, bool kerning, bool trimming, doubl
             
             // Trim right side
             outer2: foreach_reverse(x; minX..maxX) {
-                // writeln(x);
                 // +1 because of the reason stated above assigning minX and maxX
                 newMaxX = x + 1;
                 foreach (y; minY..maxY) {
                     // This is ubyte (0-255)
                     if (tempImageObject.getPixel(x,y).a > 0) {
-                        // writeln("found it!");
                         break outer2;
                     }
                 }
             }
-
-            // writeln("new min x: ", newMinX);
-            // writeln("new max x: ", newMaxX);
             
             // I was going to throw a blank space check, but maybe someone has a reason for that
 
@@ -608,8 +585,6 @@ void encodeGraphics(ref RazorFont fontObject, bool kerning, bool trimming, doubl
             maxX = newMaxX;
 
             thisCharacterWidth = maxX - minX;
-
-            // writeln("width: ", thisCharacterWidth);
             
         }
 
@@ -634,15 +609,7 @@ void encodeGraphics(ref RazorFont fontObject, bool kerning, bool trimming, doubl
             // Now store char width - Find the new double size by comparing it to original
             // Will simply be 1.0 with monospaced fonts
             cast(double)iPos[8] / cast(double)characterWidth
-        ];
-        // writeln("-------------------");
-        // writeln(glPositions[0..2]);
-        // writeln(glPositions[2..4]);
-        // writeln(glPositions[4..6]);
-        // writeln(glPositions[6..8]);
-
-        // writeln(glPositions[8..10]);
-        
+        ];        
 
         // Now dump it into the dictionary
         fontObject.map[value] = glPositions;
