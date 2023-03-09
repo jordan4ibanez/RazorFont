@@ -1,3 +1,11 @@
+//  ____________________________
+// |         RAZOR FONT         |
+// |____________________________|
+//  \            /\            /
+//  /            \/            \
+// | The Sharpest Font Library  |
+// |   For D Game Development   |
+// |____________________________|
 module razor_font;
 
 import std.conv;
@@ -7,15 +15,6 @@ import std.typecons;
 import color;
 import png;
 import std.math;
-
-//  ____________________________
-// |         RAZOR FONT         |
-// |____________________________|
-//  \            /\            /
-//  /            \/            \
-// | The Sharpest Font Library  |
-// |   For D Game Development   |
-// |____________________________|
 
 
 /**
@@ -518,7 +517,6 @@ void encodeGraphics(ref RazorFont fontObject, bool kerning, bool trimming, doubl
 
     // Cache a raw true color image for trimming if requested
     const TrueColorImage tempImageObject = trimming == false ? null : readPng(fontObject.fileLocation).getAsTrueColorImage();
-
 
     foreach (size_t i, const(dchar) value; fontObject.rawMap) {
 
