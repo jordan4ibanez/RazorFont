@@ -1,0 +1,13 @@
+{
+    "pallet_width": 128,
+    "pallet_height": 128,
+
+    "border": 1,
+    
+    "rows": 8,
+
+    "character_width": 15,
+    "charactert_height": 15,
+
+    "character_map": "abcdefghijklmnopqrstuvwxyz0123456789!.,():?"
+}
