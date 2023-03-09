@@ -18,6 +18,8 @@ Fonts are stored in the RazorFont module. There is no need to manually manage fo
 
 RazorFont accumulates text via vertex, texture, and indices data. You can render straight to a canvas, then flush it.
 
-RazorFont also has the ability for you to hook your existing rendering engine into it via delegates. See this test project for more details:
+RazorFont also has the ability for you to hook your existing rendering engine into it via delegates.
+
+Here is a tutorial:
 
 https://github.com/jordan4ibanez/RazorFontExampleProject/blob/main/source/app.d
