@@ -1,11 +1,6 @@
-///  ____________________________
-/// |         RAZOR FONT         |
-/// |____________________________|
-///  \            /\            /
-///  /            \/            \
-/// | The Sharpest Font Library  |
-/// |   For D Game Development   |
-/// |____________________________|
+/**
+The Sharpest Font Library For D Game Development
+*/
 module razor_font;
 
 import std.conv;
@@ -16,6 +11,14 @@ import color;
 import png;
 import std.math;
 
+//  ____________________________
+// |         RAZOR FONT         |
+// |____________________________|
+//  \            /\            /
+//  /            \/            \
+// | The Sharpest Font Library  |
+// |   For D Game Development   |
+// |____________________________|
 
 /**
 Stores IMPORTANT font data to be reused by Razor Font - These are stored in static memory in the program
