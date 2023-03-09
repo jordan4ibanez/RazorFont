@@ -244,6 +244,9 @@ void createFont(string fileLocation, string name = "", bool trimming = false, do
 
 //* ============================ BEGIN GRAPHICS DISPATCH ===========================
 
+/**
+Allows you to extract the current font PNG file location automatically
+*/
 string getCurrentFontTextureFileLocation() {
     if (currentFont is null) {
         throw new Exception("Razor Font: Can't get a font file location! You didn't select one!");
@@ -491,7 +494,7 @@ void renderToCanvas(double posX, double posY, const double fontSize, string text
 
 //* ========================= BEGIN GRAPHICS ENCODING ==============================
 
-void encodeGraphics(ref RazorFont fontObject, bool kerning, bool trimming, double spacing, double spaceCharacterSize) {
+private void encodeGraphics(ref RazorFont fontObject, bool kerning, bool trimming, double spacing, double spaceCharacterSize) {
     
     // Store all this on the stack
 
@@ -623,7 +626,7 @@ void encodeGraphics(ref RazorFont fontObject, bool kerning, bool trimming, doubl
 
 //* ========================== BEGIN JSON DECODING ==================================
 // Run through the required data to assemble a font object
-void parseJson(ref RazorFont fontObject, const string jsonLocation) {
+private void parseJson(ref RazorFont fontObject, const string jsonLocation) {
     void[] rawData = read(jsonLocation);
     string jsonString = cast(string)rawData;
     JSONValue jsonData = parseJSON(jsonString);
