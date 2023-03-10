@@ -20,6 +20,9 @@ RazorFont accumulates text via vertex, texture, and indices data. You can render
 
 RazorFont also has the ability for you to hook your existing rendering engine into it via delegates.
 
-Here is a tutorial:
+Here are two tutorials tutorial:
 
-https://github.com/jordan4ibanez/RazorFontExampleProject/blob/main/source/app.d
+[Intro Tutorial](https://github.com/jordan4ibanez/RazorFontExampleProject/blob/main/source/app.d)
+
+
+[Advanced Tutorial](https://github.com/jordan4ibanez/RazorFontExampleProjectAdvanced/blob/main/source/app.d)
