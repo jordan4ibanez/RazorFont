@@ -649,7 +649,14 @@ void renderToCanvas(double posX, double posY, const double fontSize, string text
     }
 }
 
-
+/**
+Processes your input string, then sends you how long it would be when rendering.
+Helpful for repositioning your "cursor" in the texture cache!
+*/
+int getTextRenderableCharsLength(string input) {
+    import std.array;
+    return cast(int)input.replace(" ", "").replace("\n", "").length;
+}
 
 //! ============================ END GRAPHICS DISPATCH =============================
 
