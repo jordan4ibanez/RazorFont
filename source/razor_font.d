@@ -28,6 +28,9 @@ Counts are so we can grab a slice of this information because anything after it 
 private immutable int CHARACTER_LIMIT = 4096;
 /// 4 Vertex positions in a char
 private double[4 * CHARACTER_LIMIT] vertexCache;
+// 4 vec4 colors (so 16 per char) - defaults to 0,0,0,1 rgba
+private double[4 * 4 * CHARACTER_LIMIT] colorCache;
+
 /// 8 (4 vec2) texture coordinate positions in a char
 private double[8 * CHARACTER_LIMIT] textureCoordinateCache;
 /// 6 (2 tris) indices in a char
@@ -36,6 +39,8 @@ private int[6 * CHARACTER_LIMIT] indicesCache;
 private int vertexCount            = 0;
 private int textureCoordinateCount = 0;
 private int indicesCount           = 0;
+private int colorCount             = 0;
+private int chars                  = 0;
 
 /**
 This allows batch rendering to a "canvas" ala vertex positionining
@@ -50,6 +55,25 @@ These store constant data that is highly repetitive
 */
 private immutable double[8] RAW_VERTEX  = [ 0,0, 0,1, 1,1, 1,0 ];
 private immutable int[6]    RAW_INDICES = [ 0,1,2, 2,3,0 ];
+
+/**
+This is a very simple fix for static memory arrays being filled with no.
+A simple on switch for initialization.
+To use RazorFont, you must create a font, so it runs this in there.
+*/
+private bool initializedColorArray = false;
+void initColorArray() {
+    if (initializedColorArray) {
+        return;
+    }
+    initializedColorArray = true;
+    for (int i = 0; i < 16 * CHARACTER_LIMIT; i += 4) {
+        colorCache[i]     = 0;
+        colorCache[i + 1] = 0;
+        colorCache[i + 2] = 0;
+        colorCache[i + 3] = 1;
+    }
+}
 
 /**
 Caches the current font in use.
@@ -76,6 +100,7 @@ struct RazorFontData {
     double[] vertexPositions;
     double[] textureCoordinates;
     int[]    indices;
+    double[] colors;
 }
 /// A simple struct to get the width and height of rendered text
 struct RazorTextSize {
@@ -212,6 +237,9 @@ spaceCharacterSize is how big the ' ' (space) character is. By default, it's 4 p
 */
 void createFont(string fileLocation, string name = "", bool trimming = false, double spacing = 1.0, double spaceCharacterSize = 4.0) {
 
+    // This is the fix explained above
+    initColorArray();
+
     //! Place holder for future
     bool kerning = false;
 
@@ -246,6 +274,130 @@ void createFont(string fileLocation, string name = "", bool trimming = false, do
 }
 
 //* ============================ BEGIN GRAPHICS DISPATCH ===========================
+
+/**
+Allows you to blanket set the color for the entire canvas.
+
+Be careful though, this overwrites the entire color cache
+after the currently rendered character position in memory!
+*/
+void switchColors(double r, double g, double b, double a = 1.0) {
+    for (int i = colorCount; i < colorCache.length; i += 4) {
+        colorCache[i]     = r;
+        colorCache[i + 1] = g;
+        colorCache[i + 2] = b;
+        colorCache[i + 3] = a;
+    }
+}
+
+/**
+Allows you to blanket a range of characters in the canvas with a color.
+
+So if you have: abcdefg
+And run setColorRange(0.5,0.5,0.5, 1, 3, 5)
+Now e and f are gray. Alpha 1.0
+*/
+void setColorRange(int start, int end, double r, double g, double b, double a) {
+    for (int i = start * 16; i < end * 16; i += 4) {
+        colorCache[i]     = r;
+        colorCache[i + 1] = g;
+        colorCache[i + 2] = b;
+        colorCache[i + 3] = a;
+    }
+}
+
+/**
+Allows you to set individual character colors
+*/
+void setColorChar(int charIndex, double r, double g, double b, double a = 1.0) {
+    const int startIndex = charIndex * 16;
+    for (int i = startIndex; i < startIndex + 16; i += 4) {
+        colorCache[i]     = r;
+        colorCache[i + 1] = g;
+        colorCache[i + 2] = b;
+        colorCache[i + 3] = a;
+    }
+}
+
+/**
+Allows you to directly work on vertex position colors in a character.
+Using direct points (verbose)
+*/
+void setColorPoints(
+    int charIndex,
+
+    double topLeftR,
+    double topLeftG,
+    double topLeftB,
+    double topLeftA,
+
+    double bottomLeftR,
+    double bottomLeftG,
+    double bottomLeftB,
+    double bottomLeftA,
+
+    double bottomRightR,
+    double bottomRightG,
+    double bottomRightB,
+    double bottomRightA,
+
+    double topRightR,
+    double topRightG,
+    double topRightB,
+    double topRightA
+) {
+    const int startIndex = charIndex * 16;
+    
+    // It's already immensely verbose, let's just add on to this verbosity
+    
+    colorCache[startIndex]      = topLeftR;
+    colorCache[startIndex + 1]  = topLeftG;
+    colorCache[startIndex + 2]  = topLeftB;
+    colorCache[startIndex + 3]  = topLeftA;
+
+    colorCache[startIndex + 4]  = bottomLeftR;
+    colorCache[startIndex + 5]  = bottomLeftG;
+    colorCache[startIndex + 6]  = bottomLeftB;
+    colorCache[startIndex + 7]  = bottomLeftA;
+
+    colorCache[startIndex + 8]  = bottomRightR;
+    colorCache[startIndex + 9]  = bottomRightG;
+    colorCache[startIndex + 10] = bottomRightB;
+    colorCache[startIndex + 11] = bottomRightA;
+
+    colorCache[startIndex + 12] = topRightR;
+    colorCache[startIndex + 13] = topRightG;
+    colorCache[startIndex + 14] = topRightB;
+    colorCache[startIndex + 15] = topRightA;
+}
+
+/**
+Allows you to directly work on vertex position colors in a character.
+Using direct points (tidy).
+double vec is [R,G,B,A]
+*/
+void setColorPoints(int charIndex, double[4] topLeft, double[4] bottomLeft, double[4] bottomRight, double[4] topRight) {
+    const int startIndex = charIndex * 16;  
+    foreach(externalIndex, vec4; [topLeft, bottomLeft, bottomRight, topRight]) {
+        foreach (index, value; vec4) {
+            colorCache[startIndex + (externalIndex * 4) + index] = value;
+        }
+    }
+}
+
+/// Allows you to get the max amount of characters allowed in canvas
+int getMaxChars() {
+    return CHARACTER_LIMIT;
+}
+
+/**
+Allows you to index the current amount of characters on the canvas. This does
+not include spaces and carriage returns. You MUST call renderToCanvas before
+calling this otherwise this will always be 0 when you call it.
+*/
+int getCurrentCharacterIndex() {
+    return chars;
+}
 
 /**
 Allows you to extract the current font PNG file location automatically
@@ -285,13 +437,16 @@ RazorFontData flush() {
     RazorFontData returningStruct = RazorFontData(
         vertexCache[0..vertexCount],
         textureCoordinateCache[0..textureCoordinateCount],
-        indicesCache[0..indicesCount]
+        indicesCache[0..indicesCount],
+        colorCache[0..colorCount]
     );
 
     // Reset the counters
     vertexCount = 0;
     textureCoordinateCount = 0;
     indicesCount = 0;
+    colorCount = 0;
+    chars = 0;
 
     return returningStruct;
 }
@@ -484,6 +639,9 @@ void renderToCanvas(double posX, double posY, const double fontSize, string text
         vertexCount  += 8;
         textureCoordinateCount += 8;
         indicesCount += 6;
+        colorCount += 16;
+        // This one is characters literal
+        chars++;
 
         if (vertexCount >= CHARACTER_LIMIT || indicesCount >= CHARACTER_LIMIT) {
             throw new Exception("Character limit is: " ~ to!string(CHARACTER_LIMIT));
