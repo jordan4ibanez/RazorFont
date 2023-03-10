@@ -12,6 +12,8 @@
  |____________________________|
  ```
 
+My Discord: https://discord.gg/dRPyvubfyg
+
 RazorFont is pretty simple. You give it a PNG with the font data, then you map the font data with a JSON file.
 
 Fonts are stored in the RazorFont module. There is no need to manually manage fonts yourself.
