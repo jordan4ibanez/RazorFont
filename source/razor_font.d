@@ -843,7 +843,6 @@ Note: If you use moveChar() with this, you MUST do moveChar() first!
 void rotateChar(int index, double rotation, bool isDegrees = false) {
 
     // This is why my doml is required
-    import std.stdio;
     import doml.vector_3d;
     import doml.matrix_4d;
 
@@ -873,8 +872,6 @@ void rotateChar(int index, double rotation, bool isDegrees = false) {
     Vector3d bottomRighttDiff = Vector3d(bottomRight).sub(centerPoint);
     Vector3d topRighttDiff    = Vector3d(topRight)   .sub(centerPoint);
 
-    
-
     // These calculations also store the new data in the variables we created above
     // We must center the coordinates into real coordinates
 
@@ -895,9 +892,6 @@ void rotateChar(int index, double rotation, bool isDegrees = false) {
 
     topRight.x += centerPoint.x;
     topRight.y += centerPoint.y;
-
-
-    // topLeft.add(Vector3d(centerPoint.x, topLeftDiff.y, centerPoint.z));
 
     vertexCache[baseIndex    ] = topLeft.x;
     vertexCache[baseIndex + 1] = topLeft.y;
