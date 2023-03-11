@@ -97,7 +97,7 @@ A simple on switch for initialization.
 To use RazorFont, you must create a font, so it runs this in there.
 */
 private bool initializedColorArray = false;
-void initColorArray() {
+private void initColorArray() {
     if (initializedColorArray) {
         return;
     }
