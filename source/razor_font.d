@@ -57,6 +57,41 @@ private immutable double[8] RAW_VERTEX  = [ 0,0, 0,1, 1,1, 1,0 ];
 private immutable int[6]    RAW_INDICES = [ 0,1,2, 2,3,0 ];
 
 /**
+The offset of the text shadowing.
+
+Note: Since offset is only proportional to the font size when rendering,
+the offset is completely detached from the font spec!
+
+The font spec has no bearing on how the offset is calculated. Only font size.
+
+0.05 by default because I think it looks nice. :)
+*/
+private double shadowOffsetX = 0.05;
+private double shadowOffsetY = 0.05;
+
+/**
+The RGBA components of the shadow
+*/
+private double[4] shadowColor = [0,0,0,1];
+
+/**
+Are shadows enabled?
+
+They get disabled everytime you run renderToCanvas().
+This is so there basically isn't a "shadow memory leak".
+
+As in: Oops I forgot to disable shadows now everything after has a 
+shadow for some reason!
+*/
+private bool shadowsEnabled = false;
+
+/**
+Allows turning off the shadowing color fill for performance.
+Say you want a rainbow shadow, you can use this for that.
+*/
+private bool shadowColoringEnabled = true;
+
+/**
 This is a very simple fix for static memory arrays being filled with no.
 A simple on switch for initialization.
 To use RazorFont, you must create a font, so it runs this in there.
@@ -291,6 +326,28 @@ void switchColors(double r, double g, double b, double a = 1.0) {
 }
 
 /**
+Allows you to set the offet of the text shadowing.
+
+This is RELATIVE via the font size so it will remain consistent
+across any font size!
+*/
+void setShadowOffset(double x, double y) {
+    shadowOffsetX = x / 10.0;
+    shadowOffsetY = y / 10.0;
+}
+
+/**
+Allows you to blanket set the shadow color for the entire canvas after the current character.
+*/
+void switchShadowColor(double r, double g, double b, double a = 1.0) {
+    shadowColor[0] = r;
+    shadowColor[1] = g;
+    shadowColor[2] = b;
+    shadowColor[3] = a;
+}
+
+
+/**
 Allows you to blanket a range of characters in the canvas with a color.
 
 So if you have: abcdefg
@@ -409,6 +466,20 @@ string getCurrentFontTextureFileLocation() {
     return currentFont.fileLocation;
 }
 
+/**
+Turns on shadowing.
+
+Rememeber: This creates twice as many characters because
+you have to render a background, then a foreground.
+
+You can also do some crazy stuff with shadows because the shadow
+colors are stored in the same color cache as regular text.
+*/
+void enableShadows() {
+    shadowsEnabled = true;
+}
+
+
 /// Allows you to render to a canvas using top left as a base position
 void setCanvasSize(double width, double height) {
     // Dividing by 2.0 because my test environment shader renders to center on pos(0,0) top left
@@ -488,10 +559,16 @@ RazorTextSize getTextSize(double fontSize, string text) {
         accumulatorX += (currentFont.map[character][8] * fontSize) + spacing;
     }
 
-    // Now add a last bit of the height offset
+    // Add a last bit of the height offset
     accumulatorY += fontSize;
-    // Now remove the last bit of spacing
+    // Remove the last bit of spacing
     accumulatorX -= spacing;
+
+    // Finally, if shadowing is enabled, add in shadowing offset
+    if (shadowsEnabled) {
+        accumulatorX += (shadowOffsetX * fontSize);
+        accumulatorY += (shadowOffsetY * fontSize);
+    }
 
     return RazorTextSize(accumulatorX, accumulatorY);
 }
@@ -524,7 +601,7 @@ void selectFont(string font) {
 /**
 Render to the canvas. Remember: You must run flush() to collect this canvas.
 If rounding is enabled, it will attempt to keep your text aligned with the pixels on screen
-to avoid wavy/blurry/jagged text.
+to avoid wavy/blurry/jagged text. This will automatically render shadows for you as well.
 */
 void renderToCanvas(double posX, double posY, const double fontSize, string text, bool rounding = true) {
 
@@ -647,15 +724,70 @@ void renderToCanvas(double posX, double posY, const double fontSize, string text
             throw new Exception("Character limit is: " ~ to!string(CHARACTER_LIMIT));
         }
     }
+
+    /**
+    Because there is no Z buffer in 2d, OpenGL seems to NOT overwrite pixel data of existing
+    framebuffer pixels. Since this is my testbed, I must assume that this is how
+    Vulkan, Metal, DX, and so-on do this. This is GUARANTEED to not affect software renderers.
+    So we have to do the shadowing AFTER the foreground.
+
+    We need to poll, THEN disable the shadow variable because without that it would be
+    an infinite recursion, aka a stack overflow.
+    */
+    const bool shadowsWereEnabled = shadowsEnabled;
+    shadowsEnabled = false;
+    if (shadowsWereEnabled) {
+        const int textLength = getTextRenderableCharsLength(text);
+        const int currentIndex = getCurrentCharacterIndex();
+        if (shadowColoringEnabled) {
+            setColorRange(
+                currentIndex,
+                currentIndex + textLength,
+                shadowColor[0],
+                shadowColor[1],
+                shadowColor[2],
+                shadowColor[3]
+            );
+        }
+        renderToCanvas(posX + (shadowOffsetX * fontSize), posY + (shadowOffsetY * fontSize), fontSize, text, rounding);
+    }
+    
+    // Turn this back on because it can become a confusing nightmare
+    shadowColoringEnabled = true;
 }
 
 /**
 Processes your input string, then sends you how long it would be when rendering.
 Helpful for repositioning your "cursor" in the texture cache!
+
+Note: This will return cursor position into the beginning index of the background
+of the shadowed text if you're using it for subtraction.
 */
 int getTextRenderableCharsLength(string input) {
     import std.array;
     return cast(int)input.replace(" ", "").replace("\n", "").length;
+}
+
+/**
+Processes your input text string with shadows to see how long it would be when rendering.
+Helpful for positioning your "cursor" in the texture cache!
+
+Note: This will return cursor position into the beginning index of the foreground
+of the shadowed text if you're using it for subtraction.
+*/
+int getTextRenderableCharsLengthWithShadows(string input) {
+    return getTextRenderableCharsLength(input) * 2;
+}
+
+/**
+Allows you to disable shadow coloring for a teeny tiny bit of performance
+when you're doing cool custom shadow coloring!
+
+Important Note: When renderToCanvas() is called, shadow coloring is turned
+back on because it can become a confusing nightmare if not done like this.
+*/
+void disableShadowColoring() {
+    shadowColoringEnabled = false;
 }
 
 //! ============================ END GRAPHICS DISPATCH =============================
