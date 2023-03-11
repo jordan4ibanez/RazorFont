@@ -26,14 +26,14 @@ Counts are so we can grab a slice of this information because anything after it 
 */
 /// The current character limit (letters in string)
 private immutable int CHARACTER_LIMIT = 4096;
-/// 4 Vertex positions in a char
-private double[4 * CHARACTER_LIMIT] vertexCache;
-// 4 vec4 colors (so 16 per char) - defaults to 0,0,0,1 rgba
+/// 4 vec2 (so 8 per char) vertex positions
+private double[4 * 2 * CHARACTER_LIMIT] vertexCache;
+// 4 vec4 (so 16 per char) colors - defaults to 0,0,0,1 rgba
 private double[4 * 4 * CHARACTER_LIMIT] colorCache;
 
-/// 8 (4 vec2) texture coordinate positions in a char
+/// 4 vec2 (so 8 per char) texture coordinate positions
 private double[8 * CHARACTER_LIMIT] textureCoordinateCache;
-/// 6 (2 tris) indices in a char
+/// 2 tris (so 6 per char) indices
 private int[6 * CHARACTER_LIMIT] indicesCache;
 /// The count of each of these so we can grab a slice of data fresh out of the oven, delicious!
 private int vertexCount            = 0;
@@ -330,6 +330,8 @@ Allows you to set the offet of the text shadowing.
 
 This is RELATIVE via the font size so it will remain consistent
 across any font size!
+
+Remember: Offset will become reset to default when you call renderToCanvas()
 */
 void setShadowOffset(double x, double y) {
     shadowOffsetX = x / 10.0;
@@ -338,6 +340,8 @@ void setShadowOffset(double x, double y) {
 
 /**
 Allows you to blanket set the shadow color for the entire canvas after the current character.
+
+Remember: When you renderToCanvas() shadow colors will default back to black.
 */
 void switchShadowColor(double r, double g, double b, double a = 1.0) {
     shadowColor[0] = r;
@@ -474,6 +478,8 @@ you have to render a background, then a foreground.
 
 You can also do some crazy stuff with shadows because the shadow
 colors are stored in the same color cache as regular text.
+
+Remember: When you renderToCanvas() shadows turn off.
 */
 void enableShadows() {
     shadowsEnabled = true;
@@ -749,11 +755,16 @@ void renderToCanvas(double posX, double posY, const double fontSize, string text
                 shadowColor[3]
             );
         }
-        renderToCanvas(posX + (shadowOffsetX * fontSize), posY + (shadowOffsetY * fontSize), fontSize, text, rounding);
+        renderToCanvas(posX + (shadowOffsetX * fontSize), posY + (shadowOffsetY * fontSize), fontSize, text, false);
+
+        shadowOffsetX = 0.05;
+        shadowOffsetY = 0.05;
     }
     
     // Turn this back on because it can become a confusing nightmare
     shadowColoringEnabled = true;
+    // Switch back to black because this also can become a confusing nightmare
+    switchShadowColor(0,0,0);
 }
 
 /**
@@ -788,6 +799,119 @@ back on because it can become a confusing nightmare if not done like this.
 */
 void disableShadowColoring() {
     shadowColoringEnabled = false;
+}
+
+/**
+Allows you to manually move around characters.
+
+Note: You can manually move around shadows by getting the
+renderable text size before turning on shadows, then offset
+your current index into the string by this size.
+
+Note: This is in pixel coordinates.
+*/
+void moveChar(int index, double posX, double posY) {
+    // This gets a bit confusing, so I'm going to write it out verbosely to be able to read/maintain it
+
+    // Move to cursor position in vertexCache
+    const int baseIndex = index * 8;
+
+    // Top left
+    vertexCache[baseIndex    ] += posX; // X
+    vertexCache[baseIndex + 1] -= posY; // Y
+
+    // Bottom left
+    vertexCache[baseIndex + 2] += posX; // X
+    vertexCache[baseIndex + 3] -= posY; // Y
+
+    // Bottom right
+    vertexCache[baseIndex + 4] += posX; // X
+    vertexCache[baseIndex + 5] -= posY; // Y
+
+    // Top right
+    vertexCache[baseIndex + 6] += posX; // X
+    vertexCache[baseIndex + 7] -= posY; // Y
+}
+
+/**
+Rotate a character around the centerpoint of it's face.
+
+Note: This defaults to radians by default.
+
+Note: If you use moveChar() with this, you MUST do moveChar() first!
+*/
+void rotateChar(int index, double rotation, bool isDegrees = false) {
+
+    // This is why my doml is required
+    import std.stdio;
+    import doml.geometry_utils;
+    import doml.math;
+    import doml.vector_3d;
+    import doml.matrix_4d;
+
+    if (isDegrees) {
+        immutable radToDegrees = 180.0 / PI;
+        rotation *= radToDegrees;
+    }
+
+    /**
+    This is written out even more verbosely than moveChar()
+    so you can see why you must do moveChar() first.
+    */
+
+    // Move to cursor position in vertexCache
+    const int baseIndex = index * 8;
+
+    // Convert to 3d to suppliment to 4x4 matrix
+    Vector3d topLeft     = Vector3d(vertexCache[baseIndex    ], vertexCache[baseIndex + 1], 0);
+    Vector3d bottomLeft  = Vector3d(vertexCache[baseIndex + 2], vertexCache[baseIndex + 3], 0);
+    Vector3d bottomRight = Vector3d(vertexCache[baseIndex + 4], vertexCache[baseIndex + 5], 0);
+    Vector3d topRight    = Vector3d(vertexCache[baseIndex + 6], vertexCache[baseIndex + 7], 0);
+    
+    Vector3d centerPoint = Vector3d((topLeft.x + topRight.x) / 2.0,  (topLeft.y + bottomLeft.y) / 2.0, 0);
+
+    Vector3d topLeftDiff      = Vector3d(topLeft)    .sub(centerPoint);
+    Vector3d bottomLeftDiff   = Vector3d(bottomLeft) .sub(centerPoint);
+    Vector3d bottomRighttDiff = Vector3d(bottomRight).sub(centerPoint);
+    Vector3d topRighttDiff    = Vector3d(topRight)   .sub(centerPoint);
+
+    
+
+    // These calculations also store the new data in the variables we created above
+    // We must center the coordinates into real coordinates
+
+    Matrix4d().rotate(rotation, 0,0,1).translate(topLeftDiff)     .getTranslation(topLeft);
+    Matrix4d().rotate(rotation, 0,0,1).translate(bottomLeftDiff)  .getTranslation(bottomLeft);
+    Matrix4d().rotate(rotation, 0,0,1).translate(bottomRighttDiff).getTranslation(bottomRight);
+    Matrix4d().rotate(rotation, 0,0,1).translate(topRighttDiff)   .getTranslation(topRight);
+
+
+    topLeft.x += centerPoint.x;
+    topLeft.y += centerPoint.y;
+
+    bottomLeft.x += centerPoint.x;
+    bottomLeft.y += centerPoint.y;
+
+    bottomRight.x += centerPoint.x;
+    bottomRight.y += centerPoint.y;
+
+    topRight.x += centerPoint.x;
+    topRight.y += centerPoint.y;
+
+
+    // topLeft.add(Vector3d(centerPoint.x, topLeftDiff.y, centerPoint.z));
+
+    vertexCache[baseIndex    ] = topLeft.x;
+    vertexCache[baseIndex + 1] = topLeft.y;
+
+    vertexCache[baseIndex + 2] = bottomLeft.x;
+    vertexCache[baseIndex + 3] = bottomLeft.y;
+
+    vertexCache[baseIndex + 4] = bottomRight.x;
+    vertexCache[baseIndex + 5] = bottomRight.y;
+
+    vertexCache[baseIndex + 6] = topRight.x;
+    vertexCache[baseIndex + 7] = topRight.y;
 }
 
 //! ============================ END GRAPHICS DISPATCH =============================
