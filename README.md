@@ -27,3 +27,5 @@ Here are two tutorials tutorial:
 [Intro Tutorial](https://github.com/jordan4ibanez/RazorFontExampleProject/blob/main/source/app.d)
 
 [Intermediate Tutorial](https://github.com/jordan4ibanez/RazorFontExampleProjectIntermediate/blob/main/source/app.d)
+
+[Advanced Tutorial](https://github.com/jordan4ibanez/RazorFontExampleProjectAdvanced/blob/main/source/app.d)
