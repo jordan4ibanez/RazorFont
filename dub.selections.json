@@ -1,6 +1,7 @@
 {
 	"fileVersion": 1,
 	"versions": {
-		"arsd-official": "10.9.8"
+		"arsd-official": "10.9.8",
+		"doml": "1.0.1"
 	}
 }

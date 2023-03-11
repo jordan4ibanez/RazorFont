@@ -3,10 +3,11 @@
 		"jordan4ibanez"
 	],
 	"copyright": "Copyright © 2023, jordan4ibanez",
+	"dependencies": {
+		"arsd-official:png": "~>10.9.8",
+		"doml": "~>1.0.1"
+	},
 	"description": "A razor sharp font library for D game development.",
 	"license": "MIT",
-	"name": "razorfont",
-    "dependencies": {
-		"arsd-official:png": "~>10.9.8"
-    }
+	"name": "razorfont"
 }
