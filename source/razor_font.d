@@ -844,8 +844,6 @@ void rotateChar(int index, double rotation, bool isDegrees = false) {
 
     // This is why my doml is required
     import std.stdio;
-    import doml.geometry_utils;
-    import doml.math;
     import doml.vector_3d;
     import doml.matrix_4d;
 
